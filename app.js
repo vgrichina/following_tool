@@ -24,6 +24,9 @@ use(Auth, {
 // Use system module, for debug output, etc.
 var sys = require("sys");
 
+// Use various utility functions
+require("ext");
+
 // Use OAuth implementation classl
 var OAuth = require("oauth").OAuth;
 
@@ -75,7 +78,7 @@ get("/", function() {
 
             sys.puts("friendsIds = ", friendsIds);
 
-            getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" + friendsIds.join(","), "GET", function (data) {
+            getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" + friendsIds.take(10).join(","), "GET", function (data) {
                 var friends = eval(data);
 
                 self.render("following.html.haml", {
