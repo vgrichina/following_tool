@@ -1,4 +1,13 @@
+!!! 1.1
 %h1 Following
 %ul
   - each user in friends
-    %li= user.name
+    %li
+      .friendInfo
+        .name
+          = user.name + " "
+          (
+          %a{ href: "http://twitter.com/" + user.screen_name }
+            = "@" + user.screen_name
+          )
+        .bio= user.description
