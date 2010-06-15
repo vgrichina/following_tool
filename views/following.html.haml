@@ -1,13 +1,28 @@
 !!! 1.1
-%h1 Following
-%ul
-  - each user in friends
-    %li
-      .friendInfo
-        .name
-          = user.name + " "
-          (
-          %a{ href: "http://twitter.com/" + user.screen_name }
-            = "@" + user.screen_name
-          )
-        .bio= user.description
+%html
+  %head
+    %script{ src: "static/client_side.js" }
+  %body
+    %h1 Following
+    %table
+      %tr
+        %th
+        %th User
+        %th Following
+        %th Actions
+      - each user in friends
+        %tr
+          %td
+            %img{ src: user.profile_image_url }
+          %td
+            .name
+              = user.name + " "
+              (
+              %a{ href: "http://twitter.com/" + user.screen_name }
+                = "@" + user.screen_name
+              )
+            .bio= user.description
+          %td
+            %a{ href: "/unfollow/" + user.screen_name, class: "unfollow" }
+              Unfollow
+

@@ -40,12 +40,16 @@ var oauth =  new OAuth("http://twitter.com/oauth/request_token",
                             "HMAC-SHA1");
 
 
-function getResource(self, url, method, callback) {
+function getResource(self, url, method, callback, errorCallback) {
     oauth.getProtectedResource(url, method,
         self.session.auth["twitter_oauth_token"], self.session.auth["twitter_oauth_token_secret"],
         function (error, data) {
-            sys.puts('got protected resource ');
-            callback(data);
+            if (error) {
+                sys.puts("getProtectedResource error: " + error);
+                errorCallback(error, data);
+            } else {
+                callback(data);
+            }
         });
 }
 
@@ -73,23 +77,48 @@ get("/", function() {
     if (!self.isAuthenticated()) {
         self.redirect("/auth/twitter");
     } else {
+        // Get list of friends
         getResource(self, "http://api.twitter.com/1/friends/ids.json", "GET", function (data) {
             var friendsIds = eval(data);
 
             sys.puts("friendsIds = ", friendsIds);
 
-            getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" + friendsIds.take(10).join(","), "GET", function (data) {
-                var friends = eval(data);
+            // Get list of followers
+            getResource(self, "http://api.twitter.com/1/followers/ids.json", "GET", function (data) {
+                var followersIds = eval(data);
 
-                self.render("following.html.haml", {
-                    layout: false,
-                    locals: {
-                        friends: friends
-                    }
+                // Show only followed users which aren't following back
+                var unfollowIds = friendsIds.reject(function(it) {
+                    return followersIds.includes(it);
+                });
+
+                // Lookup info about users
+                getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" + unfollowIds.take(10).join(","), "GET", function (data) {
+                    var friends = eval(data);
+
+                    self.render("following.html.haml", {
+                        layout: false,
+                        locals: {
+                            friends: friends
+                        }
+                    });
                 });
             });
         });
     }
+});
+
+get("/unfollow/*", function(screenName) {
+    var self = this;
+
+    // Unfollow given user
+    getResource(self, "http://api.twitter.com/1/friendships/destroy.json?screen_name=" + screenName, "POST", function (data) {
+        //sys.puts(data);
+        // Print name of unfollowed user
+        sys.puts("@" + screenName);
+
+        self.respond(200, "<html><h1>Unfollowed " + screenName + "</h1></html>");
+    });
 });
 
 run();
