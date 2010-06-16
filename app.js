@@ -5,9 +5,12 @@ require.paths.unshift("./express-auth/lib");
 
 // Use Express framework and its plugins
 require("express");
-require("express/plugins")
-use(Cookie)
-use(Session, { expires: (12).hours , reapInterval: (2).minutes })
+require("express/plugins");
+use(Cookie);
+use(Session, { expires: (12).hours , reapInterval: (2).minutes });
+
+// Enable serving static files at /public
+use(Static);
 
 // Use secret values from separate module
 var secret = require("./secret");
@@ -81,8 +84,6 @@ get("/", function() {
         getResource(self, "http://api.twitter.com/1/friends/ids.json", "GET", function (data) {
             var friendsIds = eval(data);
 
-            sys.puts("friendsIds = ", friendsIds);
-
             // Get list of followers
             getResource(self, "http://api.twitter.com/1/followers/ids.json", "GET", function (data) {
                 var followersIds = eval(data);
@@ -93,7 +94,9 @@ get("/", function() {
                 });
 
                 // Lookup info about users
-                getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" + unfollowIds.take(10).join(","), "GET", function (data) {
+                getResource(self, "http://api.twitter.com/1/users/lookup.json?user_id=" +
+                        unfollowIds.take(100).join(","), "GET", function(data) {
+
                     var friends = eval(data);
 
                     self.render("following.html.haml", {
@@ -112,12 +115,15 @@ get("/unfollow/*", function(screenName) {
     var self = this;
 
     // Unfollow given user
-    getResource(self, "http://api.twitter.com/1/friendships/destroy.json?screen_name=" + screenName, "POST", function (data) {
-        //sys.puts(data);
+    getResource(self, "http://api.twitter.com/1/friendships/destroy.json?screen_name=" + screenName,
+            "POST", function(data) {
+
         // Print name of unfollowed user
         sys.puts("@" + screenName);
 
         self.respond(200, "<html><h1>Unfollowed " + screenName + "</h1></html>");
+    }, function(error) {
+        self.respond(200, "<html><h1>Error " + error + "</h1></html>");
     });
 });
 
